@@ -75,7 +75,7 @@ if h{fig.Number}.first_flag || ~ishandle(h{fig.Number}.fig)
         hold on;
     end
     
-    % View information
+    % View information 카메라
     if ~isempty(view_info)
         switch length(view_info)
             case 1, view(view_info);

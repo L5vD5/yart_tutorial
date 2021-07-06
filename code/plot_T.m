@@ -2,7 +2,7 @@ function [fig,h_coord,h_sphere] = plot_T(T,varargin)
 %
 % Plot homogeneous transformation Matrix
 %
-global zoomPct % zoom rate from dragzoom 
+global zoomPct % zoom rate(percent) from dragzoom 
 persistent h
 
 % Make enough handlers at the first
