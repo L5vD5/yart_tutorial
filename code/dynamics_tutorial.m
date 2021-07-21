@@ -126,7 +126,7 @@ for tick = 1:max_tick % loop
     end
 end % for tick = 1:100 % loop
 
-%% Plot coordinates (3x3 translation 2)
+%% Plot coordinates (3x3 translation & rotation)
 ccc;
 
 T_world = pr2t(cv([0,0,0]),rpy2r([0,0,0])); % world coordinate
@@ -249,17 +249,22 @@ T_world = pr2t(cv([0,0,0]),rpy2r([0,0,0])); % world coordinate
 
 max_tick = 1000000;
 local_p = [0, 0, 1];
-v = [0,0.5,0];
-w = [1,0,0];
+v = [0,0.1,0];
+w = [0,1,0];
 sv = [w, v];
+sv_ = [0, 0, 0.1, 0, 0, 0];
+
+scross = @(r) [0 -r(3) r(2); r(3) 0 -r(1); -r(2) r(1) 0;];
 
 for tick = 1:max_tick % loop
     % Run
-    v_local = crm(sv) * (local_p)';
-    local_p = local_p + v_local * 0.01;
+    sv = sv + ([scross(sv_(1:3)) zeros(3,3); scross(sv_(4:6)) scross(sv_(1:3))] * sv' * 0.01)';
+    v_local = sv(4:6) + cross(sv(1:3),local_p);
+    local_p = local_p + v_local*0.01;
     
-    rot = rodrigues(w/norm(w),tick*norm(w)*0.01);
-    T_local = pr2t(cv(v_local(1:3)), rot);
+    rot = rodrigues(sv(1:3)/norm(sv(1:3)),tick*norm(sv(1:3))*0.01);
+
+    T_local = pr2t(cv(local_p),rot);
     
     % Animate
     if mod(tick,5) == 0 % plot every 5 tick
