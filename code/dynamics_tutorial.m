@@ -246,26 +246,31 @@ end % for tick = 1:100 % loop
 ccc;
 
 T_world = pr2t(cv([0,0,0]),rpy2r([0,0,0])); % world coordinate
-
 max_tick = 1000000;
+traj = [];
 local_p = [0, 0, 1];
-v = [0,0.1,0];
-w = [0,1,0];
-sv = [w, v];
-sv_ = [0, 0, 0.1, 0, 0, 0];
-
-scross = @(r) [0 -r(3) r(2); r(3) 0 -r(1); -r(2) r(1) 0;];
+T_local = pr2t(cv(local_p),rpy2r([0,0,0]));
+v = [0,1,0];
+w = [1,0,0];
+sv = [w, v];  % m_hat
+sv_ = [0, 0, 0, 0, 0, 0]; % v_hat
+scross = @(sv_) [skew(sv_(1:3)) zeros(3,3); skew(sv_(4:6)) skew(sv_(1:3))];
 
 for tick = 1:max_tick % loop
     % Run
-    sv = sv + ([scross(sv_(1:3)) zeros(3,3); scross(sv_(4:6)) scross(sv_(1:3))] * sv' * 0.01)';
+    % sv = sv + (scross(sv_) * sv' * 0.01)';
+    [p_local, r_local]= t2pr(T_local);
+    world_X_local = [r_local' zeros(3,3); skew(p_local)*r_local' r_local'];
+    local_X_world = [r_local zeros(3,3); -r_local*skew(p_local) r_local];
+    sv = sv;
+
     v_local = sv(4:6) + cross(sv(1:3),local_p);
     local_p = local_p + v_local*0.01;
     
     rot = rodrigues(sv(1:3)/norm(sv(1:3)),tick*norm(sv(1:3))*0.01);
-
     T_local = pr2t(cv(local_p),rot);
-    
+
+    traj = cat(1,traj,rv(local_p));
     % Animate
     if mod(tick,5) == 0 % plot every 5 tick
         fig = set_fig(figure(1),'pos',[0.5,0.5,0.3,0.45],...
@@ -300,6 +305,7 @@ for tick = 1:max_tick % loop
         plot_line(p_world,p_local,'fig_idx',1,'lc','k','lw',1);
         % Plot title
         title_str = sprintf('[%d/%d]',tick,max_tick);
+        plot_traj(traj,'fig_idx',1,'subfig_idx',1,'tlc','r','tlw',1,'tls','--'); % traj
         plot_title(title_str,'fig_idx',1,'tfs',25,'tfc','k','interpreter','latex');
         drawnow;
         if ~ishandle(fig), break; end
